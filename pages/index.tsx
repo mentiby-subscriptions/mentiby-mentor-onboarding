@@ -15,6 +15,7 @@ interface FormData {
   name: string;
   mobileNumber: string;
   emailAddress: string;
+  mentorAccessPassword: string;
   dateOfBirth: string;
   gender: string;
   currentState: string;
@@ -52,6 +53,7 @@ export default function MentorOnboardingForm() {
     name: '',
     mobileNumber: '',
     emailAddress: '',
+    mentorAccessPassword: '',
     dateOfBirth: '',
     gender: '',
     currentState: '',
@@ -126,6 +128,25 @@ export default function MentorOnboardingForm() {
     setSuccess(false);
 
     try {
+      // Verify mentor access password via backend (password is NEVER exposed in frontend code)
+      const passwordResponse = await fetch('/api/verify-mentor-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          password: form.mentorAccessPassword,
+        }),
+      });
+
+      if (!passwordResponse.ok) {
+        const data = await passwordResponse.json().catch(() => null);
+        const msg =
+          (data && (data.error as string)) ||
+          'Invalid mentor access password. Please contact MentiBY.';
+        throw new Error(msg);
+      }
+
       // Validate all required agreements
       if (!form.agreeConfidentiality || !form.agreeDiscipline || !form.authorizeDataUse || !form.agreeTerms) {
         throw new Error('Please accept all required agreements before submitting.');
@@ -1074,6 +1095,31 @@ export default function MentorOnboardingForm() {
                   </div>
 
                 <div className="space-y-6">
+                  {/* Mentor Access Password */}
+                  <div className="form-group group">
+                    <label className="form-label font-black text-xl md:text-2xl mb-4 block">
+                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-200 to-purple-200 font-black">
+                        Mentor Access Password
+                      </span>{' '}
+                      <span className="text-pink-400 font-black">*</span>
+                    </label>
+                    <p className="text-gray-400 text-sm mb-4">
+                      Enter the secret access password shared by the MentiBY team.
+                    </p>
+                    <div className="relative">
+                      <input
+                        required
+                        name="mentorAccessPassword"
+                        type="password"
+                        value={form.mentorAccessPassword}
+                        onChange={handleChange}
+                        autoComplete="off"
+                        className="w-full px-6 py-4 rounded-2xl bg-gradient-to-r from-white/90 to-gray-50/90 border-2 border-transparent text-black placeholder-gray-500 focus:outline-none focus:border-purple-400 focus:shadow-lg focus:shadow-purple-400/25 transition-all duration-300 hover:shadow-md backdrop-blur-sm"
+                        placeholder="Enter mentor access password"
+                      />
+                    </div>
+                  </div>
+
                   {/* Confidentiality Agreement */}
                   <label className="flex items-start space-x-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer group">
                     <input
